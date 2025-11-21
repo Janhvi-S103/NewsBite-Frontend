@@ -4,6 +4,7 @@ const baseURL = "http://localhost:3000/api";
 const authSection = document.getElementById("authSection");
 const newsSection = document.getElementById("newsSection");
 const profileSection = document.getElementById("profileSection");
+const activitySection = document.getElementById("activitySection");
 const bookmarksSection = document.getElementById("bookmarksSection");
 
 const homeBtn = document.getElementById("homeBtn");
@@ -12,7 +13,7 @@ const bookmarksBtn = document.getElementById("bookmarksBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 
 function showSection(section) {
-  [authSection, newsSection, profileSection, bookmarksSection].forEach(s => s.classList.add("hidden"));
+  [authSection, newsSection, profileSection, activitySection, bookmarksSection].forEach(s => s.classList.add("hidden"));
   section.classList.remove("hidden");
 }
 
@@ -107,7 +108,6 @@ async function loadNews(query = "") {
     div.innerHTML = `
       <div class="news-card">
     <a href="${item.url}" target="_blank" rel="noopener noreferrer">
-
         <div class="news-card-header">
           <h3>${item.title}</h3>
           <p>${item.description}</p>
@@ -120,29 +120,32 @@ async function loadNews(query = "") {
             <span>${item.likes ?? 0}</span>
           </button>
     
-          <button class="action-btn comment-btn">
-            <i class="bi bi-chat-left-text"></i>
-            <span id="comment-count-${item.news_id}"></span>
-          </button>
+            <button class="action-btn comment-btn" id="comment-btn-${item.news_id}" onclick="toggleComments('${item.news_id}')">
+                <i class="bi bi-chat-left-text"></i>
+                <span id="comment-count-${item.news_id}"></span>
+            </button>
     
-          <button class="action-btn bookmark-btn" onclick="toggleBookmark('${item.news_id}')">
+          <button id="bookmark-btn-${item.news_id}" class="action-btn bookmark-btn" onclick="toggleBookmark('${item.news_id}')">
             <i class="bi bi-bookmark"></i>
           </button>
     
         </div>
     
-        <div class="comment-box">
-          <input type="text" id="comment-${item.news_id}" placeholder="Write a comment..." />
-          <button onclick="addComment('${item.news_id}')">Send</button>
+        <div class="comment-section" id="comment-section-${item.news_id}">
+            <div class="comment-box">
+                <input type="text" id="comment-${item.news_id}" placeholder="Write a comment..." />
+                <button onclick="addComment('${item.news_id}')">Send</button>
+            </div>
+
+            <div id="comments-${item.news_id}" class="comments-list"></div>
         </div>
-    
-        <div id="comments-${item.news_id}"></div>
     
       </div>
     `;
 
     container.appendChild(div);
     loadComments(item.news_id);
+    updateLikeStatus(item.news_id);
   });
 }
 
@@ -154,7 +157,7 @@ let searchState = {
   endDate: "",
   page: 1,
   limit: 9,
-  sort: "" // example values: 'publishedAt_desc', 'publishedAt_asc', 'likes_desc'
+  order: "" // example values: 'publishedAt_desc', 'publishedAt_asc', 'likes_desc'
 };
 
 /* ---------- UTILS ---------- */
@@ -167,8 +170,8 @@ function buildSearchUrl() {
   if (searchState.page) params.set('page', searchState.page);
   if (searchState.limit) params.set('limit', searchState.limit);
 
-  // Sorting is not explicitly in the controller, but we can send 'sort' and handle in backend later.
-  if (searchState.sort) params.set('sort', searchState.sort);
+  // Sorting is not explicitly in the controller, but we can send 'order' and handle in backend later.
+  if (searchState.order) params.set('order', searchState.order);
 
   return `${baseURL}/user/search?${params.toString()}`;
 }
@@ -201,30 +204,53 @@ function renderNews(results) {
             <span>${item.likes ?? 0}</span>
           </button>
     
-          <button class="action-btn comment-btn">
-            <i class="bi bi-chat-left-text"></i>
-            <span id="comment-count-${item.news_id}"></span>
-          </button>
+            <button class="action-btn comment-btn" onclick="toggleComments('${item.news_id}')">
+                <i class="bi bi-chat-left-text"></i>
+                <span id="comment-count-${item.news_id}"></span>
+            </button>
     
-          <button class="action-btn bookmark-btn" onclick="toggleBookmark('${item.news_id}')">
+          <button id="bookmark-btn-${item.news_id}" class="action-btn bookmark-btn" onclick="toggleBookmark('${item.news_id}')">
             <i class="bi bi-bookmark"></i>
           </button>
     
         </div>
     
-        <div class="comment-box">
-          <input type="text" id="comment-${item.news_id}" placeholder="Write a comment..." />
-          <button onclick="addComment('${item.news_id}')">Send</button>
+        <div class="comment-section" id="comment-section-${item.news_id}">
+            <div class="comment-box">
+                <input type="text" id="comment-${item.news_id}" placeholder="Write a comment..." />
+                <button onclick="addComment('${item.news_id}')">Send</button>
+            </div>
+
+            <div id="comments-${item.news_id}" class="comments-list"></div>
         </div>
-    
-        <div id="comments-${item.news_id}"></div>
     
       </div>
     `;
 
     container.appendChild(div);
     loadComments(item.news_id);
+    updateLikeStatus(item.news_id);
   });
+}
+
+function toggleComments(newsId) {
+    const section = document.getElementById(`comment-section-${newsId}`);
+    section.classList.toggle("open");
+
+    //Get Comments-btn 
+    const commentBtn = document.getElementById(`comment-btn-${newsId}`);
+    const commentIcon = commentBtn.querySelector("i");
+    //Toggle icon style
+    if (section.classList.contains("open")) {
+        commentIcon.classList.remove("bi-chat-left-text");
+        commentIcon.classList.add("bi-chat-left-text-fill");
+        commentBtn.classList.add("commentClicked");
+    } else {
+        commentIcon.classList.remove("bi-chat-left-text-fill");
+        commentIcon.classList.add("bi-chat-left-text");
+        commentBtn.classList.remove("commentClicked");
+    }
+
 }
 
 /* ---------- performSearch: builds query, fetches backend with full params, updates pagination ---------- */
@@ -256,7 +282,7 @@ async function performSearch(pushToHistory = false) {
         endDate: searchState.endDate,
         page: searchState.page,
         limit: searchState.limit,
-        sort: searchState.sort
+        order: searchState.order
       }).toString();
       history.pushState(searchState, "", `?${urlState}`);
     }
@@ -290,7 +316,14 @@ function initSearchControls() {
     searchState.category = categorySelect.value;
     searchState.startDate = startDateInput.value;
     searchState.endDate = endDateInput.value;
-    searchState.sort = sortSelect.value;
+    if (sortSelect.value === "latest") {
+        searchState.order = "desc";
+    } else if (sortSelect.value === "oldest") {
+        searchState.order = "asc";
+    }
+    else{
+    searchState.order = sortSelect.value;
+    }
     searchState.page = 1;     // reset page on new search
     performSearch(true);
   });
@@ -346,7 +379,7 @@ document.getElementById("searchForm").addEventListener("submit", (e) => {
   const category = document.getElementById("categorySelect").value;
   const startDate = document.getElementById("startDate").value;
   const endDate = document.getElementById("endDate").value;
-  const sort = document.getElementById("sortSelect").value;
+  const order = document.getElementById("sortSelect").value;
 
   // Build query string
   let finalQuery = query;
@@ -354,10 +387,11 @@ document.getElementById("searchForm").addEventListener("submit", (e) => {
   if (category) finalQuery += `&category=${category}`;
   if (startDate) finalQuery += `&startDate=${startDate}`;
   if (endDate) finalQuery += `&endDate=${endDate}`;
-  if (sort === "latest") finalQuery += `&sort=desc`;
-  if (sort === "oldest") finalQuery += `&sort=asc`;
+  if (order === "latest") finalQuery += `&order=desc`;
+  if (order === "oldest") finalQuery += `&order=asc`;
 
   console.log("Searching:", finalQuery);
+  console.log(searchState);
 
   loadNews(finalQuery);
 });
@@ -543,13 +577,21 @@ async function loadReplies(commentId, news_id) {
         <div class="reply" id="reply-${r._id}">
           <b>${escapeHtml(r.username)}</b>: ${escapeHtml(r.comment)}
 
-          <div class="votes">
-            <button onclick="voteReply('${commentId}','${r._id}','up')">⬆</button>
-            <button onclick="voteReply('${commentId}','${r._id}','down')">⬇</button>
-            <span>Score: ${r.score || 0}</span>
+          <div class="comment-actions">
+            <button class="vote-btn" onclick="voteReply('${commentId}','${r._id}','up')">
+                <i class="bi bi-hand-thumbs-up"></i>
+            </button>
+            <span>${r.score || 0}</span>
+            <button class="vote-btn" onclick="voteReply('${commentId}','${r._id}','down')">
+                <i class="bi bi-hand-thumbs-down"></i>
+            </button>
+
+            <button class="delete-comment-btn" onclick="deleteReply('${commentId}', '${r._id}', '${news_id}')">
+            <i class="bi bi-trash3-fill"></i>
+            </button>
+
           </div>
 
-          <button onclick="deleteReply('${commentId}', '${r._id}', '${news_id}')">🗑️</button>
         </div>
       `)
       .join("");
@@ -676,17 +718,81 @@ async function toggleLike(newsId) {
   }
 }
 
+async function updateLikeStatus(newsId) {
+    try {
+        const res = await fetch(`${baseURL}/user/getStatus/${newsId}`, {
+            credentials: "include"
+        });
+        const data = await res.json();
+
+        const like_btn = document.getElementById(`like-btn-${newsId}`);
+        if (!like_btn) return;
+
+        const icon = like_btn.querySelector("i");
+        //Update like button UI based on status
+        if (data.isLiked) {
+            icon.classList.remove("bi-heart");
+            icon.classList.add("bi-heart-fill");
+            like_btn.classList.add("liked");
+        } else {
+            icon.classList.remove("bi-heart-fill");
+            icon.classList.add("bi-heart");
+            like_btn.classList.remove("liked");
+        }
+
+        const bookmark_btn = document.getElementById(`bookmark-btn-${newsId}`);
+        if (!bookmark_btn) return;
+
+        const bookmarkIcon = bookmark_btn.querySelector("i");
+        // Update bookmark button UI based on status
+        if (data.isBookmarked) {
+            bookmarkIcon.classList.remove("bi-bookmark");
+            bookmarkIcon.classList.add("bi-bookmark-fill");
+            bookmark_btn.classList.add("bookmarked");
+        } else {
+            bookmarkIcon.classList.remove("bi-bookmark-fill");
+            bookmarkIcon.classList.add("bi-bookmark");
+            bookmark_btn.classList.remove("bookmarked");
+        }
+
+    } catch (err) {
+        console.error("Error fetching like status:", err);
+        return null;
+    }
+}
+
 
 
 // ---------- BOOKMARKS ----------
 async function toggleBookmark(newsId) {
-  await fetch(`${baseURL}/user/bookmarks`, {
+  console.log("Toggling bookmark for newsId:", newsId);
+  const res = await fetch(`${baseURL}/user/bookmarks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: 'include',
     body: JSON.stringify({ news_id: newsId }),
   });
-  loadBookmarked();
+    const data = await res.json();
+    if (!res.ok) {
+        return alert(data.message || "Error toggling bookmark");
+    }
+    console.log(data);
+    const btn = document.getElementById(`bookmark-btn-${newsId}`);
+    if (!btn) return;
+
+    const icon = btn.querySelector("i");
+    
+    // toggle styles/icons
+    if (data.bookmarked) {
+        icon.classList.remove("bi-bookmark");
+        icon.classList.add("bi-bookmark-fill");
+        btn.classList.add("bookmarked");
+    }
+    else {
+        icon.classList.remove("bi-bookmark-fill");
+        icon.classList.add("bi-bookmark");
+        btn.classList.remove("bookmarked");
+    }
 }
 
 async function loadBookmarked() {
@@ -699,7 +805,7 @@ async function loadBookmarked() {
 
   const list = document.getElementById("bookmarkedList");
   list.innerHTML = ""; // clear
-
+  
   for (let item of bookmarked) {
     const newsId = item.news_id;
 
@@ -721,6 +827,9 @@ async function loadBookmarked() {
 
 
 // ---------- PROFILE ----------
+function isEmptyObject(obj) {
+  return Object.keys(obj).length === 0;
+}
 async function loadProfile() {
   const res = await fetch(`${baseURL}/user/profile`, {
     headers: { "Content-Type": "application/json" },
@@ -731,7 +840,12 @@ async function loadProfile() {
     <p><strong>Username:</strong> ${user.user.username}</p>
     <p><strong>Bio:</strong> ${user.user.bio_data || "No bio yet."}</p>
   `;
-  document.getElementById("profileAvatar").src = user.user.profileImage || 'assets/default-avatar.png';
+  if (isEmptyObject(user.user.profileImage)){
+    document.getElementById("profileAvatar").src = 'assets/default-avatar.png';
+  }
+  else{
+    document.getElementById("profileAvatar").src = user.user.profileImage || '/assets/default-avatar.png';
+  }
 }
 
 document.getElementById("saveBioBtn").addEventListener("click", async () => {
@@ -830,11 +944,11 @@ async function loadUserActivity() {
 }
 
 
-
 // ---------- NAVIGATION ----------
 homeBtn.onclick = () => { loadNews(); showSection(newsSection); };
-profileBtn.onclick = () => { loadProfile(); loadUserActivity(); showSection(profileSection); };
+profileBtn.onclick = () => { loadProfile(); showSection(profileSection); };
 bookmarksBtn.onclick = () => { loadBookmarked(); showSection(bookmarksSection); };
+activityBtn.onclick = () => { loadUserActivity(); showSection(activitySection); };
 logoutBtn.onclick = async () => {
   await fetch(`${baseURL}/auth/logout`, {
     method: "POST",

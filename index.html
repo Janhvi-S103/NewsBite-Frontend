@@ -33,6 +33,10 @@
           <i class="bi bi-person-circle"></i><span>Profile</span>
         </button>
 
+        <button id="activityBtn">
+            <i class="bi bi-activity"></i><span>Activity</span>
+        </button>
+
         <button id="bookmarksBtn">
           <i class="bi bi-bookmark-star"></i><span>Bookmarks</span>
         </button>
@@ -162,7 +166,7 @@
   
           <!-- Profile photo -->
           <div class="profile-photo-container">
-              <img id="profileAvatar" src="data:image/png;base64,{{user.profileImage}}" alt="Profile Photo">
+              <img id="profileAvatar" src="/assets/default-avatar.png" alt="Profile Photo">
               <label for="profileUpload" class="upload-btn">
                   <i class="bi bi-camera-fill"></i>
               </label>
@@ -183,15 +187,14 @@
               Save Bio
           </button>
       </div>
-      <div >
+  </section>
+
+  <section id="activitySection" class="hidden">
         <h2>Your Activity</h2>
         <div id="activityContainer" class="activity-wrapper">
             <!-- Activity items will appear here -->
         </div>
-      </div>
-
   </section>
-  
 
     <!-- Bookmarks Section -->
     <section id="bookmarksSection" class="hidden">
