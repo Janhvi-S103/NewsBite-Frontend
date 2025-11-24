@@ -22,7 +22,7 @@ function showSection(section) {
 const openAdminBtn = document.getElementById("redirectToAdmin");
 
 openAdminBtn.addEventListener("click", () => {
-    window.open("http://localhost:5503", "_blank");
+    window.open("https://news-bite-frontend.vercel.app/admin/", "_blank");
 });
 
 // ---------- AUTH ----------
