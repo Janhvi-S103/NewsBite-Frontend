@@ -1,4 +1,4 @@
-const baseURL = "http://localhost:3000/api";
+const baseURL = "https://news-bite.onrender.com/api";
 
 // DOM references
 const authSection = document.getElementById("authSection");
