@@ -413,6 +413,19 @@ navButtons.forEach(btn => {
   });
 });
 
+async function loadVotes ( commentId ) {
+    try {
+        const res = await fetch(`${baseURL}/user/comments/${commentId}/getVotes`, {
+            credentials: "include"
+        });
+        const data = await res.json();
+        return data.score || 0;
+    } catch (err) {
+        console.error(err);
+        return 0;
+    }
+}
+
 // ---------- COMMENTS ----------
 async function loadComments(news_id) {
   // remember current news id for actions that need it
@@ -454,8 +467,8 @@ async function loadComments(news_id) {
       <button class="vote-btn" onclick="voteComment('${c._id}', 'up', '${news_id}')">
         <i class="bi bi-hand-thumbs-up"></i>
       </button>
-
-      <span class="comment-score">${c.score || 0}</span>
+      <!-- Get the vote score from the comment object -->
+      <span class="comment-score">${await loadVotes(c._id) || 0}</span>
 
       <button class="vote-btn" onclick="voteComment('${c._id}', 'down', '${news_id}')">
         <i class="bi bi-hand-thumbs-down"></i>
@@ -810,7 +823,9 @@ async function loadBookmarked() {
 
   const data = await res.json();
   const bookmarked = data.bookmarkedNews;
-
+  if (!bookmarked || bookmarked.length === 0) {
+    return;
+  }
   const list = document.getElementById("bookmarkedList");
   list.innerHTML = ""; // clear
   
