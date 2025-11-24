@@ -500,7 +500,7 @@ async function addComment(news_id) {
   if (!comment) return alert("Please enter a comment");
 
   try {
-    const res = await fetch(`${baseURL}/api/user/comments`, {
+    const res = await fetch(`${baseURL}/user/comments`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
