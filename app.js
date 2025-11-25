@@ -1,4 +1,4 @@
-const baseURL = "https://news-bite.onrender.com/api";
+const baseURL = "https://news-bite1.onrender.com/api";
 
 // DOM references
 const authSection = document.getElementById("authSection");
