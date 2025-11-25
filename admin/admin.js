@@ -5,7 +5,7 @@
    - All requests that require auth must include credentials: "include"
 */
 
-const API = "https://news-bite.onrender.com/api";
+const API = "https://news-bite1.onrender.com/api";
 
 // ---- UI elements ----
 const loginSection = document.getElementById("loginSection");
